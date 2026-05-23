@@ -13,6 +13,7 @@ const state = {
     registeredTo: ""
   },
   errors: [],
+  warnings: [],
   toast: null,
   loading: false,
   calendarMonth: {
@@ -352,6 +353,8 @@ function calendarGrid(id, monthValue, selectedValue) {
 function filterPanel(analysis) {
   const f = state.filters;
   const hasAnalysis = Boolean(state.analysis);
+  const warningList = state.warnings.slice(0, 8);
+  const hiddenWarnings = Math.max(0, state.warnings.length - warningList.length);
   return `
     <aside class="sidebar">
       <section class="panel upload-panel">
@@ -411,10 +414,16 @@ function filterPanel(analysis) {
           </div>
         </div>
         ${state.errors.length
-          ? state.errors.slice(0, 6).map((error) => `<div class="error">${icon("triangle-alert", 16)} ${error}</div>`).join("")
-          : hasAnalysis
+          ? state.errors.slice(0, 8).map((error) => `<div class="error">${icon("triangle-alert", 16)} ${error}</div>`).join("")
+          : ""
+        }
+        ${warningList.map((warning) => `<div class="warning">${icon("circle-alert", 16)} ${warning}</div>`).join("")}
+        ${hiddenWarnings ? `<div class="warning">${icon("list-plus", 16)} Еще ${hiddenWarnings} предупреждений не показано</div>` : ""}
+        ${!state.errors.length && !state.warnings.length
+          ? hasAnalysis
             ? `<div class="success">${icon("circle-check", 16)} Данные прошли проверку</div>`
             : `<div class="success">${icon("file-spreadsheet", 16)} Загрузите Excel-файл для начала анализа</div>`
+          : ""
         }
       </section>
     </aside>
@@ -569,9 +578,17 @@ async function uploadFile(file) {
     });
     state.analysis = payload.analysis;
     state.errors = [];
-    notify("success", "Вау, всё загрузилось!", `${payload.message} Аналитика уже обновлена.`);
+    state.warnings = payload.warnings || [];
+    notify(
+      "success",
+      "Вау, всё загрузилось!",
+      state.warnings.length
+        ? `${payload.message} Есть ${state.warnings.length} сомнительных значений в контроле качества.`
+        : `${payload.message} Аналитика уже обновлена.`
+    );
   } catch (error) {
     state.errors = error.errors || [error.message || "Не удалось загрузить файл."];
+    state.warnings = error.warnings || [];
     notify("error", "Есть ошибки в файле", "Проверьте блок контроля качества: там показаны строки и причины.");
   } finally {
     state.loading = false;

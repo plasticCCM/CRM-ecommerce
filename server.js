@@ -20,6 +20,15 @@ const fields = {
   avgCheck: ["avgCheck", "averageCheck", "средний чек", "Средний чек"]
 };
 
+const fieldLabels = {
+  age: "возраст",
+  gender: "пол",
+  region: "регион",
+  registeredAt: "дата регистрации",
+  orders: "количество заказов",
+  avgCheck: "средний чек"
+};
+
 const regions = [
   "Москва",
   "Санкт-Петербург",
@@ -141,39 +150,96 @@ function pick(row, key) {
   return name ? row[name] : undefined;
 }
 
+function isValidCalendarDate(year, month, day) {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+function toIsoDate(year, month, day) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 function parseDate(value) {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return {
+      value: value.toISOString().slice(0, 10),
+      source: "date"
+    };
+  }
   if (typeof value === "number") {
     const date = new Date(Math.round((value - 25569) * 86400 * 1000));
-    return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+    return Number.isNaN(date.getTime())
+      ? { value: null, source: "number" }
+      : { value: date.toISOString().slice(0, 10), source: "number" };
   }
-  if (typeof value !== "string") return null;
+  if (typeof value !== "string") return { value: null, source: "unknown" };
   const trimmed = value.trim();
   const ru = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(trimmed);
-  if (ru) return `${ru[3]}-${ru[2]}-${ru[1]}`;
-  const iso = /^\d{4}-\d{2}-\d{2}$/.test(trimmed);
-  return iso && !Number.isNaN(new Date(trimmed).getTime()) ? trimmed : null;
+  if (ru) {
+    const day = Number(ru[1]);
+    const month = Number(ru[2]);
+    const year = Number(ru[3]);
+    return {
+      value: isValidCalendarDate(year, month, day) ? toIsoDate(year, month, day) : null,
+      source: "string"
+    };
+  }
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (iso) {
+    const year = Number(iso[1]);
+    const month = Number(iso[2]);
+    const day = Number(iso[3]);
+    return {
+      value: isValidCalendarDate(year, month, day) ? trimmed : null,
+      source: "string"
+    };
+  }
+  return { value: null, source: "string" };
 }
 
 function normalizeRows(rows) {
   const errors = [];
+  const warnings = [];
   const clients = [];
+  const today = new Date().toISOString().slice(0, 10);
+  const minRegistrationDate = "2000-01-01";
+  const requiredColumns = Object.entries(fields)
+    .filter(([, aliases]) => !rows.some((row) => aliases.some((candidate) => Object.hasOwn(row, candidate))))
+    .map(([key]) => fieldLabels[key] || key);
+
+  if (requiredColumns.length) {
+    errors.push(`В файле отсутствуют обязательные колонки: ${requiredColumns.join(", ")}.`);
+  }
 
   rows.forEach((row, index) => {
     const rowNumber = index + 2;
-    const age = Number(pick(row, "age"));
+    const rawAge = pick(row, "age");
+    const rawOrders = pick(row, "orders");
+    const rawCheck = pick(row, "avgCheck");
+    const rawRegisteredAt = pick(row, "registeredAt");
+    const age = Number(rawAge);
     const genderRaw = String(pick(row, "gender") ?? "").trim();
     const region = String(pick(row, "region") ?? "").trim();
-    const registeredAt = parseDate(pick(row, "registeredAt"));
-    const orders = Number(pick(row, "orders"));
-    const avgCheck = Number(pick(row, "avgCheck"));
+    const parsedDate = parseDate(rawRegisteredAt);
+    const registeredAt = parsedDate.value;
+    const orders = Number(rawOrders);
+    const avgCheck = Number(rawCheck);
 
     if (!Number.isInteger(age) || age < 14 || age > 100) errors.push(`Строка ${rowNumber}: возраст должен быть целым числом от 14 до 100.`);
     if (!["м", "мужской", "ж", "женский"].includes(genderRaw.toLowerCase())) errors.push(`Строка ${rowNumber}: пол должен быть "Мужской" или "Женский".`);
     if (!region) errors.push(`Строка ${rowNumber}: регион обязателен.`);
     if (!registeredAt) errors.push(`Строка ${rowNumber}: дата регистрации должна быть в формате ДД.ММ.ГГГГ или YYYY-MM-DD.`);
     if (!Number.isInteger(orders) || orders < 0) errors.push(`Строка ${rowNumber}: количество заказов должно быть неотрицательным целым числом.`);
-    if (!Number.isFinite(avgCheck) || avgCheck < 0) errors.push(`Строка ${rowNumber}: средний чек должен быть положительным числом.`);
+    if (!Number.isFinite(avgCheck) || avgCheck <= 0) errors.push(`Строка ${rowNumber}: средний чек должен быть положительным числом.`);
+
+    if (Number.isInteger(age) && (age < 18 || age > 80)) warnings.push(`Строка ${rowNumber}: возраст ${age} выглядит необычно для клиентской базы.`);
+    if (region && (region.length < 2 || /\d/.test(region))) warnings.push(`Строка ${rowNumber}: регион "${region}" выглядит сомнительно.`);
+    if (registeredAt && registeredAt < minRegistrationDate) errors.push(`Строка ${rowNumber}: дата регистрации ${registeredAt} слишком ранняя для CRM-базы.`);
+    if (registeredAt && registeredAt > today) warnings.push(`Строка ${rowNumber}: дата регистрации ${registeredAt} находится в будущем.`);
+    if (registeredAt && parsedDate.source === "number") warnings.push(`Строка ${rowNumber}: дата регистрации указана числом Excel (${rawRegisteredAt}); проверьте формат ячейки.`);
+    if (Number.isInteger(orders) && orders > 200) warnings.push(`Строка ${rowNumber}: количество заказов ${orders} выглядит слишком большим.`);
+    if (Number.isFinite(avgCheck) && avgCheck > 0 && avgCheck < 100) warnings.push(`Строка ${rowNumber}: средний чек ${avgCheck} ₽ выглядит слишком низким.`);
+    if (Number.isFinite(avgCheck) && avgCheck > 500000) warnings.push(`Строка ${rowNumber}: средний чек ${avgCheck} ₽ выглядит слишком высоким.`);
 
     clients.push({
       id: index + 1,
@@ -186,7 +252,7 @@ function normalizeRows(rows) {
     });
   });
 
-  return { clients: errors.length ? [] : clients, errors };
+  return { clients: errors.length ? [] : clients, errors, warnings };
 }
 
 function average(values) {
@@ -364,10 +430,10 @@ const server = http.createServer(async (request, response) => {
 
     if (request.method === "POST" && url.pathname === "/api/upload") {
       const body = await readBody(request);
-      const { clients, errors } = normalizeRows(body.rows || []);
-      if (errors.length) return sendJson(response, 422, { ok: false, errors });
+      const { clients, errors, warnings } = normalizeRows(body.rows || []);
+      if (errors.length) return sendJson(response, 422, { ok: false, errors, warnings });
       await saveClients(clients);
-      return sendJson(response, 200, { ok: true, message: `Загружено ${clients.length} записей.`, analysis: analysis(clients) });
+      return sendJson(response, 200, { ok: true, message: `Загружено ${clients.length} записей.`, warnings, analysis: analysis(clients) });
     }
 
     if (request.method === "POST" && url.pathname === "/api/reset") {
