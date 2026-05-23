@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="880" viewBox="0 0 1240 880">
+  <rect width="1240" height="880" fill="#a90019"/>
+
+  <rect x="255" y="20" width="730" height="840" fill="#f4f4f4"/>
+
+  <rect x="255" y="20" width="730" height="210" fill="#c9c9c9"/>
+  <text x="325" y="58" font-family="Arial, sans-serif" font-size="28" fill="#333">CRM Analytics</text>
+  <text x="620" y="58" font-family="Arial, sans-serif" font-size="14" fill="#333">Импорт</text>
+  <text x="690" y="58" font-family="Arial, sans-serif" font-size="14" fill="#333">Аналитика</text>
+  <text x="780" y="58" font-family="Arial, sans-serif" font-size="14" fill="#333">Сегменты</text>
+  <text x="880" y="58" font-family="Arial, sans-serif" font-size="14" fill="#333">Экспорт</text>
+
+  <text x="325" y="115" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#333">Анализ базы</text>
+  <text x="325" y="145" font-family="Arial, sans-serif" font-size="18" fill="#444">Загрузка Excel-файла</text>
+  <text x="325" y="169" font-family="Arial, sans-serif" font-size="18" fill="#444">и просмотр структуры</text>
+  <text x="325" y="193" font-family="Arial, sans-serif" font-size="18" fill="#444">клиентской базы</text>
+
+  <rect x="640" y="92" width="280" height="120" fill="#a8a8a8"/>
+  <text x="680" y="145" font-family="Arial, sans-serif" font-size="20" fill="#3c3c3c">Зона импорта файла</text>
+  <text x="680" y="172" font-family="Arial, sans-serif" font-size="16" fill="#3c3c3c">возраст, пол, регион, дата</text>
+
+  <circle cx="590" cy="250" r="6" fill="#bdbdbd"/>
+  <circle cx="615" cy="250" r="6" fill="#bdbdbd"/>
+  <circle cx="640" cy="250" r="6" fill="#bdbdbd"/>
+  <circle cx="665" cy="250" r="6" fill="#bdbdbd"/>
+  <circle cx="690" cy="250" r="6" fill="#bdbdbd"/>
+
+  <rect x="325" y="285" width="120" height="85" fill="#c8c8c8"/>
+  <rect x="460" y="285" width="120" height="85" fill="#c8c8c8"/>
+  <rect x="595" y="285" width="120" height="85" fill="#c8c8c8"/>
+  <rect x="730" y="285" width="120" height="85" fill="#c8c8c8"/>
+  <text x="355" y="320" font-family="Arial, sans-serif" font-size="17" fill="#3a3a3a">Клиенты</text>
+  <text x="350" y="345" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#3a3a3a">1000</text>
+  <text x="487" y="320" font-family="Arial, sans-serif" font-size="17" fill="#3a3a3a">Доход</text>
+  <text x="485" y="345" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#3a3a3a">85k</text>
+  <text x="624" y="320" font-family="Arial, sans-serif" font-size="17" fill="#3a3a3a">Медиана</text>
+  <text x="623" y="345" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#3a3a3a">66k</text>
+  <text x="760" y="320" font-family="Arial, sans-serif" font-size="17" fill="#3a3a3a">Заказы</text>
+  <text x="770" y="345" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#3a3a3a">8</text>
+
+  <rect x="325" y="395" width="260" height="165" fill="#c8c8c8"/>
+  <text x="385" y="425" font-family="Arial, sans-serif" font-size="18" fill="#3a3a3a">Возрастные группы</text>
+  <rect x="360" y="500" width="26" height="40" fill="#9f9f9f"/>
+  <rect x="410" y="465" width="26" height="75" fill="#9f9f9f"/>
+  <rect x="460" y="480" width="26" height="60" fill="#9f9f9f"/>
+  <rect x="510" y="445" width="26" height="95" fill="#9f9f9f"/>
+  <line x1="350" y1="540" x2="550" y2="540" stroke="#777" stroke-width="2"/>
+
+  <rect x="605" y="395" width="245" height="165" fill="#c8c8c8"/>
+  <text x="660" y="425" font-family="Arial, sans-serif" font-size="18" fill="#3a3a3a">Пол клиентов</text>
+  <circle cx="725" cy="485" r="55" fill="#a7a7a7"/>
+  <path d="M725 430 A55 55 0 0 1 780 485 L725 485 Z" fill="#8e8e8e"/>
+  <text x="704" y="493" font-family="Arial, sans-serif" font-size="22" fill="#333">50%</text>
+
+  <rect x="325" y="585" width="260" height="145" fill="#c8c8c8"/>
+  <text x="377" y="615" font-family="Arial, sans-serif" font-size="18" fill="#3a3a3a">Регистрации</text>
+  <rect x="355" y="675" width="25" height="35" fill="#9f9f9f"/>
+  <rect x="405" y="650" width="25" height="60" fill="#9f9f9f"/>
+  <rect x="455" y="630" width="25" height="80" fill="#9f9f9f"/>
+  <rect x="505" y="660" width="25" height="50" fill="#9f9f9f"/>
+  <text x="350" y="720" font-family="Arial, sans-serif" font-size="12" fill="#444">янв</text>
+  <text x="400" y="720" font-family="Arial, sans-serif" font-size="12" fill="#444">фев</text>
+  <text x="450" y="720" font-family="Arial, sans-serif" font-size="12" fill="#444">мар</text>
+  <text x="500" y="720" font-family="Arial, sans-serif" font-size="12" fill="#444">апр</text>
+
+  <rect x="605" y="585" width="245" height="145" fill="#c8c8c8"/>
+  <text x="675" y="615" font-family="Arial, sans-serif" font-size="18" fill="#3a3a3a">Карта регионов</text>
+  <path d="M650 675 C675 635, 735 640, 760 675 C780 705, 725 720, 690 705 C670 700, 640 705, 650 675 Z" fill="#aaaaaa" stroke="#777"/>
+  <circle cx="705" cy="675" r="14" fill="#8d8d8d" opacity="0.8"/>
+  <circle cx="745" cy="690" r="20" fill="#8d8d8d" opacity="0.6"/>
+  <circle cx="665" cy="692" r="10" fill="#8d8d8d" opacity="0.8"/>
+
+  <rect x="325" y="755" width="525" height="45" fill="#c8c8c8"/>
+  <text x="350" y="783" font-family="Arial, sans-serif" font-size="17" fill="#3a3a3a">Сегментация: регион / пол / возраст / чек / заказы</text>
+
+  <rect x="255" y="815" width="730" height="45" fill="#c9c9c9"/>
+  <text x="325" y="842" font-family="Arial, sans-serif" font-size="13" fill="#333">Импорт</text>
+  <text x="390" y="842" font-family="Arial, sans-serif" font-size="13" fill="#333">KPI</text>
+  <text x="445" y="842" font-family="Arial, sans-serif" font-size="13" fill="#333">Диаграммы</text>
+  <text x="545" y="842" font-family="Arial, sans-serif" font-size="13" fill="#333">Карта</text>
+  <text x="800" y="842" font-family="Arial, sans-serif" font-size="13" fill="#333">прототип CRM</text>
+</svg>

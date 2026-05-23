@@ -350,6 +350,18 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, 200, { ok: true, analysis: analysis(rows, body.filters) });
     }
 
+    if (request.method === "POST" && url.pathname === "/api/export") {
+      const rows = await readClients();
+      const body = await readBody(request);
+      const filtered = applyFilters(rows, body.filters);
+      return sendJson(response, 200, {
+        ok: true,
+        sourceTotal: rows.length,
+        total: filtered.length,
+        rows: filtered
+      });
+    }
+
     if (request.method === "POST" && url.pathname === "/api/upload") {
       const body = await readBody(request);
       const { clients, errors } = normalizeRows(body.rows || []);

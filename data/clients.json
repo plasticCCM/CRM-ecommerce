@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": 1,
+    "age": 32,
+    "gender": "Женский",
+    "region": "м",
+    "registeredAt": "1900-11-16",
+    "orders": 6,
+    "avgCheck": 7200
+  },
+  {
+    "id": 2,
+    "age": 41,
+    "gender": "Мужской",
+    "region": "а",
+    "registeredAt": "1900-01-01",
+    "orders": 2,
+    "avgCheck": 3400
+  }
+]

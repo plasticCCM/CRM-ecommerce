@@ -21,6 +21,34 @@ const state = {
   }
 };
 
+const emptyAnalysis = {
+  total: 0,
+  sourceTotal: 0,
+  regions: [],
+  kpis: {
+    avgRevenue: 0,
+    avgExpense: 0,
+    medianRevenue: 0,
+    modeRevenue: 0,
+    avgOrders: 0,
+    medianOrders: 0,
+    modeOrders: 0,
+    avgAge: 0
+  },
+  registrationRange: { from: "", to: "" },
+  gender: [],
+  ageGroups: [
+    { name: "18-24", count: 0, percent: 0 },
+    { name: "25-34", count: 0, percent: 0 },
+    { name: "35-44", count: 0, percent: 0 },
+    { name: "45-54", count: 0, percent: 0 },
+    { name: "55+", count: 0, percent: 0 }
+  ],
+  regionsDistribution: [],
+  registrationsByMonth: [],
+  segments: { vip: 0, newClients: 0, active: 0, inactive: 0 }
+};
+
 const fmt = new Intl.NumberFormat("ru-RU");
 const money = new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 });
 let regionMapInstance = null;
@@ -43,6 +71,13 @@ const monthNames = [
 const regionPoints = {
   "Москва": [55.7558, 37.6173],
   "Санкт-Петербург": [59.9343, 30.3351],
+  "Новосибирск": [55.0084, 82.9357],
+  "Екатеринбург": [56.8389, 60.6057],
+  "Казань": [55.7961, 49.1064],
+  "Нижний Новгород": [56.2965, 43.9361],
+  "Краснодар": [45.0355, 38.9753],
+  "Самара": [53.1959, 50.1008],
+  "Ростов-на-Дону": [47.2357, 39.7015],
   "Московская область": [55.5043, 38.0354],
   "Нижегородская область": [56.2965, 43.9361],
   "Краснодарский край": [45.0355, 38.9753],
@@ -52,6 +87,15 @@ const regionPoints = {
   "Самарская область": [53.1959, 50.1008],
   "Ростовская область": [47.2357, 39.7015]
 };
+
+function getRegionPoint(name) {
+  if (regionPoints[name]) return regionPoints[name];
+  const normalized = name.toLowerCase();
+  return Object.entries(regionPoints).find(([key]) => {
+    const pointName = key.toLowerCase();
+    return normalized.includes(pointName) || pointName.includes(normalized);
+  })?.[1];
+}
 
 function icon(name, size = 18) {
   return `<i data-lucide="${name}" style="width:${size}px;height:${size}px"></i>`;
@@ -307,6 +351,7 @@ function calendarGrid(id, monthValue, selectedValue) {
 
 function filterPanel(analysis) {
   const f = state.filters;
+  const hasAnalysis = Boolean(state.analysis);
   return `
     <aside class="sidebar">
       <section class="panel upload-panel">
@@ -365,7 +410,12 @@ function filterPanel(analysis) {
             <p>Статус загруженных данных</p>
           </div>
         </div>
-        ${state.errors.length ? state.errors.slice(0, 6).map((error) => `<div class="error">${icon("triangle-alert", 16)} ${error}</div>`).join("") : `<div class="success">${icon("circle-check", 16)} Данные прошли проверку</div>`}
+        ${state.errors.length
+          ? state.errors.slice(0, 6).map((error) => `<div class="error">${icon("triangle-alert", 16)} ${error}</div>`).join("")
+          : hasAnalysis
+            ? `<div class="success">${icon("circle-check", 16)} Данные прошли проверку</div>`
+            : `<div class="success">${icon("file-spreadsheet", 16)} Загрузите Excel-файл для начала анализа</div>`
+        }
       </section>
     </aside>
   `;
@@ -398,8 +448,8 @@ function table(items) {
 }
 
 function dashboard() {
-  const analysis = state.analysis;
-  if (!analysis) return `<div class="loader">Загрузка аналитики...</div>`;
+  const hasAnalysis = Boolean(state.analysis);
+  const analysis = state.analysis || emptyAnalysis;
   const k = analysis.kpis;
   const registrationPeriod = analysis.registrationRange.from
     ? `${analysis.registrationRange.from} - ${analysis.registrationRange.to}`
@@ -415,8 +465,8 @@ function dashboard() {
           <p>Загрузка XLSX, сегментация, описательная статистика и интерактивные визуализации в одном аналитическом рабочем месте.</p>
         </div>
         <div class="topbar__actions">
-          <button class="button" id="exportCsv">${icon("file-down")} Экспорт CSV</button>
-          <button class="button button--primary" id="refreshAnalysis">${icon("rotate-cw")} Обновить</button>
+          <button class="button" id="exportCsv" ${hasAnalysis ? "" : "disabled"}>${icon("file-down")} Экспорт CSV</button>
+          <button class="button button--primary" id="refreshAnalysis" ${hasAnalysis ? "" : "disabled"}>${icon("rotate-cw")} Обновить</button>
         </div>
       </header>
 
@@ -492,6 +542,7 @@ function dashboard() {
 }
 
 async function loadAnalysis() {
+  if (!state.analysis) return;
   const payload = await api("/api/analysis", {
     method: "POST",
     body: JSON.stringify({ filters: state.filters })
@@ -544,59 +595,82 @@ function downloadTemplate() {
   XLSX.writeFile(workbook, "client_base_template.xlsx");
 }
 
-function exportCsv() {
-  const analysis = state.analysis;
-  const k = analysis.kpis;
-  const sections = [
-    ["KPI"],
-    ["Показатель", "Значение"],
-    ["Всего клиентов", analysis.total],
-    ["Всего записей в базе", analysis.sourceTotal],
-    ["Среднее заказов", round(k.avgOrders)],
-    ["Средний возраст", round(k.avgAge)],
-    ["Период регистрации", `${analysis.registrationRange.from || ""} - ${analysis.registrationRange.to || ""}`],
-    [],
-    ["Описательная статистика"],
-    ["Показатель", "Значение"],
-    ["Средний доход", money.format(k.avgRevenue)],
-    ["Средний расход", money.format(k.avgExpense)],
-    ["Медиана дохода", money.format(k.medianRevenue)],
-    ["Мода дохода", money.format(k.modeRevenue)],
-    ["Медиана заказов", round(k.medianOrders, 0)],
-    ["Мода заказов", round(k.modeOrders, 0)],
-    [],
-    ["Распределение по полу"],
-    ["Пол", "Клиенты", "Доля"],
-    ...analysis.gender.map((item) => [item.name, item.count, `${round(item.percent)}%`]),
-    [],
-    ["Возрастные группы"],
-    ["Группа", "Клиенты", "Доля"],
-    ...analysis.ageGroups.map((item) => [item.name, item.count, `${round(item.percent)}%`]),
-    [],
-    ["Регионы"],
-    ["Регион", "Клиенты", "Доля"],
-    ...analysis.regionsDistribution.map((item) => [item.name, item.count, `${round(item.percent)}%`]),
-    [],
-    ["Регистрации по месяцам"],
-    ["Месяц", "Регистрации"],
-    ...analysis.registrationsByMonth.map((item) => [formatMonth(item.month), item.count]),
-    [],
-    ["Сегменты"],
-    ["Сегмент", "Клиенты"],
-    ["VIP клиенты", analysis.segments.vip],
-    ["Новые клиенты", analysis.segments.newClients],
-    ["Активные", analysis.segments.active],
-    ["Неактивные", analysis.segments.inactive]
-  ];
-  const csv = sections
+async function exportCsv() {
+  if (!state.analysis) {
+    notify("error", "Нечего экспортировать", "Сначала загрузите Excel-файл с клиентской базой.");
+    return;
+  }
+
+  try {
+    const payload = await api("/api/analysis", {
+      method: "POST",
+      body: JSON.stringify({ filters: state.filters })
+    });
+    const analysis = payload.analysis;
+    const k = analysis.kpis;
+
+    if (!analysis.total) {
+      notify("error", "Данных нет", "По выбранным фильтрам нечего выгружать.");
+      return;
+    }
+
+    const rows = [
+      ["Отчет по текущему сегменту"],
+      ["Показатель", "Значение"],
+      ["Всего клиентов", analysis.total],
+      ["Всего записей в базе", analysis.sourceTotal],
+      ["Среднее заказов", round(k.avgOrders)],
+      ["Медиана заказов", round(k.medianOrders, 0)],
+      ["Мода заказов", round(k.modeOrders, 0)],
+      ["Средний возраст", round(k.avgAge)],
+      ["Период регистрации", `${analysis.registrationRange.from || ""} - ${analysis.registrationRange.to || ""}`],
+      [],
+      ["Описательная статистика"],
+      ["Показатель", "Значение"],
+      ["Средний доход", money.format(k.avgRevenue)],
+      ["Средний расход", money.format(k.avgExpense)],
+      ["Медиана дохода", money.format(k.medianRevenue)],
+      ["Мода дохода", money.format(k.modeRevenue)],
+      ["Минимальный средний чек", money.format(k.minCheck)],
+      ["Максимальный средний чек", money.format(k.maxCheck)],
+      [],
+      ["Распределение по полу"],
+      ["Пол", "Клиенты", "Доля"],
+      ...analysis.gender.map((item) => [item.name, item.count, `${round(item.percent)}%`]),
+      [],
+      ["Возрастные группы"],
+      ["Группа", "Клиенты", "Доля"],
+      ...analysis.ageGroups.map((item) => [item.name, item.count, `${round(item.percent)}%`]),
+      [],
+      ["Регионы"],
+      ["Регион", "Клиенты", "Доля"],
+      ...analysis.regionsDistribution.map((item) => [item.name, item.count, `${round(item.percent)}%`]),
+      [],
+      ["Регистрации по месяцам"],
+      ["Месяц", "Регистрации"],
+      ...analysis.registrationsByMonth.map((item) => [formatMonth(item.month), item.count]),
+      [],
+      ["Сегменты"],
+      ["Сегмент", "Клиенты"],
+      ["VIP клиенты", analysis.segments.vip],
+      ["Новые клиенты", analysis.segments.newClients],
+      ["Активные", analysis.segments.active],
+      ["Неактивные", analysis.segments.inactive]
+    ];
+    const csv = rows
     .map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(";"))
     .join("\n");
-  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "crm_full_report.csv";
-  link.click();
-  URL.revokeObjectURL(link.href);
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "crm_filtered_statistics.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+    state.analysis = analysis;
+    notify("success", "CSV готов", `Статистика выгружена по текущему сегменту: ${fmt.format(analysis.total)} клиентов.`);
+  } catch (error) {
+    notify("error", "Не удалось выгрузить CSV", error.message || "Попробуйте повторить экспорт.");
+  }
 }
 
 function bindEvents() {
@@ -726,7 +800,7 @@ function initRegionMap() {
   }).addTo(regionMapInstance);
 
   items.forEach((item) => {
-    const point = regionPoints[item.name];
+    const point = getRegionPoint(item.name);
     if (!point) return;
     const radius = 10 + (item.count / max) * 24;
     L.circleMarker(point, {
@@ -755,12 +829,4 @@ function render() {
   window.lucide?.createIcons();
 }
 
-api("/api/state")
-  .then((payload) => {
-    state.analysis = payload.analysis;
-    render();
-  })
-  .catch((error) => {
-    state.errors = [error.message || "Сервис временно недоступен."];
-    render();
-  });
+render();
